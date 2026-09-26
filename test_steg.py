@@ -1,7 +1,5 @@
 """
-test_stego.py
-=============
-Unit test untuk modul stego_engine.py.
+Unit test untuk modul steg_engine.py.
 
 Lima pengujian wajib sesuai spesifikasi tugas:
 1. test_enkripsi_dekripsi_aes_roundtrip  -> fungsi enkripsi (dan dekripsi pasangannya)
@@ -13,7 +11,7 @@ Lima pengujian wajib sesuai spesifikasi tugas:
 Ditambah satu pengujian tambahan (bonus) untuk validasi kapasitas citra.
 
 Cara menjalankan:
-    python -m unittest test_stego.py -v
+    python -m unittest test_stega.py -v
 """
 
 import os

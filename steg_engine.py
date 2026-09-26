@@ -1,28 +1,15 @@
 """
-stego_engine.py
-================
-Modul inti steganografi LSB (Least Significant Bit) pada citra PNG,
-dipadukan dengan enkripsi AES-256-CBC sebelum penyisipan.
-
-Tugas Proyek Keamanan Informasi - Topik B (Steganografi)
-Program Studi Informatika, Universitas Siliwangi
-
+Modul inti steganografi LSB (Least Significant Bit) pada citra PNG, dipadukan dengan enkripsi AES-256-CBC sebelum penyisipan.
 Catatan desain:
 - Enkripsi memakai PyCryptodome (pustaka teruji), TIDAK ditulis manual.
-- Logika bit LSB dan PRNG pengacak posisi pixel ditulis dari nol (scratch),
-  tidak memakai pustaka steganografi instan maupun random.shuffle bawaan.
+- Logika bit LSB dan PRNG pengacak posisi pixel ditulis dari nol (scratch), tidak memakai pustaka steganografi instan maupun random.shuffle bawaan.
 - Alur penyisipan:
     1) pesan dienkripsi AES-256-CBC -> payload
     2) header 32 bit (panjang payload dalam byte) dibangun
     3) header + payload diubah menjadi rangkaian bit
-    4) seluruh slot bit citra (lebar x tinggi x 3 kanal) dipermutasi acak
-       memakai LCG (Linear Congruential Generator) yang di-seed dari
-       stego-key pengguna
-    5) header menempati 32 posisi pertama permutasi, payload menempati
-       posisi selanjutnya secara berurutan pada permutasi yang sama
-- Alur ekstraksi mengulang permutasi yang sama (seed identik) sehingga
-  posisi header dan payload dapat ditemukan kembali tanpa disimpan
-  terpisah di dalam citra.
+    4) seluruh slot bit citra (lebar x tinggi x 3 kanal) dipermutasi acak memakai LCG (Linear Congruential Generator) yang di-seed dari stego-key pengguna
+    5) header menempati 32 posisi pertama permutasi, payload menempati posisi selanjutnya secara berurutan pada permutasi yang sama
+- Alur ekstraksi mengulang permutasi yang sama (seed identik) sehingga posisi header dan payload dapat ditemukan kembali tanpa disimpan terpisah di dalam citra.
 """
 
 from __future__ import annotations
@@ -36,7 +23,6 @@ import numpy as np
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 from Crypto.Util.Padding import pad, unpad
-
 
 
 # =============================================================================

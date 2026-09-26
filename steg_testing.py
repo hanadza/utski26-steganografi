@@ -1,22 +1,11 @@
 """
-stego_testing.py
-=================
 Skrip pengujian kuantitatif terhadap modul steganografi LSB (stego_engine.py).
 
-Tugas Proyek Keamanan Informasi - Topik B (Steganografi)
-Program Studi Informatika, Universitas Siliwangi
+Skrip ini TIDAK menulis ulang logika LSB/PRNG; ia hanya memakai fungsi publik dari stego_engine.py (embed_message, extract_message, ExtractionError) lalu mengukur kualitas hasilnya memakai metrik kuantitatif berikut:
 
-Skrip ini TIDAK menulis ulang logika LSB/PRNG; ia hanya memakai fungsi publik
-dari stego_engine.py (embed_message, extract_message, ExtractionError) lalu
-mengukur kualitas hasilnya memakai metrik kuantitatif berikut:
-
-  1. MSE (Mean Squared Error) dan PSNR (Peak Signal-to-Noise Ratio)
-     antara citra cover dan citra stego, dengan ambang kelulusan 30 dB
-     sesuai standar mata kuliah.
-  2. Grafik perbandingan histogram warna (kanal R, G, B) cover vs stego,
-     disimpan sebagai berkas gambar PNG.
-  3. Uji kerapuhan (fragility test): citra stego dikompresi ulang sebagai
-     JPEG pada beberapa level kualitas, lalu dicoba diekstraksi untuk
+  1. MSE (Mean Squared Error) dan PSNR (Peak Signal-to-Noise Ratio) antara citra cover dan citra stego, dengan ambang kelulusan 30 dB sesuai standar mata kuliah.
+  2. Grafik perbandingan histogram warna (kanal R, G, B) cover vs stega, disimpan sebagai berkas gambar PNG.
+  3. Uji kerapuhan (fragility test): citra stego dikompresi ulang sebagai JPEG pada beberapa level kualitas, lalu dicoba diekstraksi untuk
      membuktikan sifat rapuh (fragile) metode LSB terhadap kompresi lossy.
 
 Cara menjalankan (contoh):

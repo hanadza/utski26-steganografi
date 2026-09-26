@@ -32,9 +32,11 @@ import struct
 from typing import List, Tuple
 
 from PIL import Image
+import numpy as np
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 from Crypto.Util.Padding import pad, unpad
+
 
 
 # =============================================================================
@@ -357,6 +359,20 @@ def extract_message(stego_path: str, stego_key: str) -> str:
 
     # 5. Dekripsi payload dengan AES; ExtractionError otomatis muncul bila kunci salah
     return decrypt_message(payload_bytes, stego_key)
+
+
+# =============================================================================
+# BAGIAN 8: STEGANALISIS VISUAL (ENHANCED LSB)
+# =============================================================================
+def get_enhanced_lsb_image(image: Image.Image, scale: int = 255) -> Image.Image:
+    """Menghasilkan citra Steganalisis Visual (Enhanced LSB).
+    Mengambil bit LSB dari setiap piksel/kanal lalu mengalikan nilainya dengan `scale` (default 255),
+    sehingga bit LSB (0 atau 1) terlihat jelas sebagai pola kontras hitam-putih.
+    """
+    img_rgb = image.convert("RGB")
+    arr = np.array(img_rgb, dtype=np.uint8)
+    lsb_arr = (arr & 1) * scale
+    return Image.fromarray(lsb_arr, mode="RGB")
 
 
 # =============================================================================

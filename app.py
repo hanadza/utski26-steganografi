@@ -380,6 +380,31 @@ hr{border-color:var(--line) !important; margin:1.4rem 0 !important;}
   transform: scale(0.96) !important; 
   box-shadow: 0 2px 5px -2px var(--v) !important;
 }
+
+/* ---------- Panel informasi & materi ---------- */
+details.info{background:var(--field); border:1px solid var(--line); border-radius:14px; margin:0 0 1.3rem; overflow:hidden;}
+details.info summary{cursor:pointer; list-style:none; padding:.85rem 1.1rem; font-weight:700; color:var(--vx) !important; display:flex; align-items:center; gap:.5rem; user-select:none;}
+details.info summary::-webkit-details-marker{display:none;}
+details.info summary::after{content:"+"; margin-left:auto; font-size:1.2rem; color:var(--soft);}
+details.info[open] summary{border-bottom:1px solid var(--line);}
+details.info[open] summary::after{content:"\2212";}
+.info-body{padding:1rem 1.2rem .6rem; font-size:.94rem; line-height:1.7;}
+.info-body p, .info-body li{color:var(--ink) !important; margin:0 0 .7rem;}
+.info-body ol, .info-body ul{margin:.1rem 0 .8rem 1.2rem; padding:0;}
+.info-body li{margin-bottom:.4rem;}
+.info-body b{color:var(--ink) !important;}
+.info-body code{background:var(--vt); color:var(--vx) !important; padding:.08rem .4rem; border-radius:6px; font-size:.88em;}
+.learn{display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;}
+.fd b{color:var(--ink) !important;}
+.bits{display:flex; align-items:center; flex-wrap:wrap; gap:.5rem; margin-top:.8rem; font-family:ui-monospace,Consolas,monospace; font-size:.95rem;}
+.bits span{color:var(--ink) !important;}
+.bits b.hl{background:var(--coral-t); color:var(--coral-x) !important; padding:0 .2rem; border-radius:4px;}
+.flowlabel{font-size:.82rem; font-weight:700; color:var(--soft) !important; margin:.6rem 0 .3rem;}
+.flowrow{display:flex; flex-wrap:wrap; align-items:center; gap:.4rem; margin-bottom:.5rem;}
+.fnode{background:var(--vt); border:1px solid var(--vb); color:var(--vx) !important; border-radius:10px; padding:.4rem .75rem; font-size:.85rem; font-weight:600;}
+.fnode.g{background:var(--mint-t); border-color:var(--mb); color:var(--mint-x) !important;}
+.farrow{color:var(--soft) !important; font-weight:700;}
+@media (max-width:768px){ .learn{grid-template-columns:1fr;} }
 """
 st.markdown(f"<style>{CSS}</style>", unsafe_allow_html=True)
 
@@ -390,6 +415,26 @@ st.markdown(f"<style>{CSS}</style>", unsafe_allow_html=True)
 # --------------------------------------------------------------------------
 def H(markup: str) -> None:
     st.markdown(markup, unsafe_allow_html=True)
+
+
+def info(title: str, *blocks: str, open_: bool = False) -> None:
+    """Panel materi yang bisa dibuka/ditutup."""
+    body = "".join(blocks)
+    H(f'<details class="info"{" open" if open_ else ""}><summary>💡 {title}</summary>'
+      f'<div class="info-body">{body}</div></details>')
+
+
+def ol(*items: str) -> str:
+    return "<ol>" + "".join(f"<li>{i}</li>" for i in items) + "</ol>"
+
+
+def ul(*items: str) -> str:
+    return "<ul>" + "".join(f"<li>{i}</li>" for i in items) + "</ul>"
+
+
+def flow(label: str, nodes: list[str]) -> str:
+    parts = [f'<span class="fnode{" g" if i in (0, len(nodes) - 1) else ""}">{n}</span>' for i, n in enumerate(nodes)]
+    return f'<div class="flowlabel">{label}</div><div class="flowrow">' + '<span class="farrow">→</span>'.join(parts) + "</div>"
 
 
 def section(title: str, desc: str = "") -> None:
@@ -492,6 +537,23 @@ if page == HOME:
       '<div class="fd">Bit disimpan di piksel pilihan PRNG LCG 64-bit, bukan berurutan dari pojok gambar.</div></div>'
       '<div class="feat"><div class="ic">📏</div><div class="ft">Terukur</div>'
       '<div class="fd">Kualitas dinilai dengan PSNR dan MSE, dilengkapi histogram dan uji kompresi JPEG.</div></div></div>')
+    section("Memahami steganografi", "Sebelum mencoba fitur, ini gambaran singkat apa yang terjadi di balik layar.")
+    H('<div class="learn">'
+      '<div class="feat"><div class="ft">Steganografi vs kriptografi</div>'
+      '<div class="fd">Kriptografi mengacak isi pesan agar tidak terbaca, tetapi orang tetap tahu ada pesan rahasia. '
+      'Steganografi menyembunyikan <b>keberadaan</b> pesan di dalam media biasa seperti gambar. '
+      'StegoShield memakai keduanya: pesan dienkripsi dulu, baru disembunyikan.</div></div>'
+      '<div class="feat"><div class="ft">Apa itu LSB?</div>'
+      '<div class="fd">Tiap piksel punya kanal R, G, B bernilai 0 sampai 255 (8 bit). Bit paling kanan, '
+      '<b>Least Significant Bit</b>, paling kecil pengaruhnya: mengubahnya hanya menggeser warna sebesar 1 dan tidak terlihat mata. '
+      'Satu bit pesan dititipkan di satu LSB.</div>'
+      '<div class="bits"><span>150 =</span><span>1001011<b class="hl">0</b></span><span>→</span>'
+      '<span>1001011<b class="hl">1</b></span><span>= 151</span></div></div></div>')
+    H(flow("Alur penyisipan", ["Pesan teks", "Enkripsi AES-256-CBC", "Tambah header panjang",
+                                "Acak posisi piksel (seed dari stego-key)", "Tulis bit ke LSB", "Citra stego PNG"])
+      + flow("Alur ekstraksi", ["Citra stego PNG", "Urutan piksel yang sama (stego-key sama)", "Baca bit LSB",
+                                 "Baca header, ambil payload", "Dekripsi AES-256", "Pesan teks"]))
+    st.markdown("---")
     b1, b2 = st.columns(2, gap="medium")
     b1.button("Mulai sisipkan pesan", on_click=go, args=(EMBED,), use_container_width=True)
     b2.button("Ekstrak pesan dari gambar", on_click=go, args=(EXTRACT,), use_container_width=True)
@@ -502,6 +564,15 @@ if page == HOME:
 # --------------------------------------------------------------------------
 elif page == EMBED:
     section("Sisipkan pesan rahasia", "Pilih gambar cover, tulis pesan, lalu tentukan stego-key untuk mengenkripsinya.")
+    info("Cara kerja penyisipan",
+         "<p>Pesan teks diubah menjadi bit, lalu dititipkan di bit paling kanan (LSB) piksel gambar. Langkahnya:</p>",
+         ol("<b>Enkripsi.</b> Pesan diacak dengan AES-256-CBC memakai kunci turunan stego-key. Hasilnya (payload) sedikit lebih besar dari teks asli karena ada padding dan data tambahan enkripsi.",
+            "<b>Header.</b> Panjang payload ditulis di awal agar saat ekstraksi pembacaan berhenti tepat.",
+            "<b>Acak posisi.</b> PRNG LCG 64-bit yang di-seed dari stego-key menentukan urutan piksel, jadi bit tersebar di seluruh gambar, bukan berurutan dari pojok.",
+            "<b>Tulis LSB.</b> Satu bit disimpan di satu kanal R/G/B. Nilai kanal paling banyak berubah 1.",
+            "<b>Simpan sebagai PNG.</b> Format lossless menjaga bit tetap utuh."),
+         "<p><b>Kapasitas.</b> Kira-kira lebar × tinggi × 3 bit (dibagi 8 untuk byte), dikurangi ruang header. Gambar besar menampung pesan lebih panjang, dan pesan yang melebihi kapasitas ditolak.</p>",
+         "<p><b>Membaca hasil.</b> MSE adalah rata-rata kuadrat selisih piksel cover dan stego. PSNR = 10·log10(255² / MSE); makin tinggi makin mirip. Karena tiap kanal berubah paling banyak 1, PSNR pada LSB 1-bit selalu di atas sekitar 48 dB, jauh di atas batas lulus 30 dB.</p>")
     step_slot = st.empty()
     done_steps = 0
 
@@ -591,6 +662,13 @@ elif page == EMBED:
 # --------------------------------------------------------------------------
 elif page == EXTRACT:
     section("Ekstrak pesan rahasia", "Upload citra stego dan masukkan stego-key yang dipakai saat penyisipan.")
+    info("Cara kerja ekstraksi",
+         ol("<b>Seed sama.</b> Stego-key membentuk seed PRNG yang sama seperti saat penyisipan, sehingga urutan piksel yang sama terbentuk kembali.",
+            "<b>Baca LSB.</b> Bit dibaca dari posisi-posisi tersebut, mulai dari header untuk mengetahui panjang payload.",
+            "<b>Ambil payload.</b> Hanya sejumlah byte sesuai header yang dibaca.",
+            "<b>Dekripsi.</b> Payload didekripsi dengan AES-256-CBC memakai kunci dari stego-key."),
+         "<p><b>Kenapa stego-key salah gagal?</b> Key berbeda menghasilkan urutan piksel dan kunci AES yang berbeda, sehingga bit yang terbaca acak dan dekripsi hampir pasti gagal. Coba masukkan key yang salah untuk melihatnya.</p>",
+         "<p><b>Catatan.</b> Gunakan file stego PNG asli. Gambar yang sudah dikompres JPEG, di-screenshot, atau dikirim lewat aplikasi yang mengompres ulang akan merusak bit pesan.</p>")
 
     c1, c2 = st.columns(2, gap="large")
     with c1:
@@ -631,6 +709,11 @@ elif page == VIS:
         "Bit paling tidak signifikan tiap piksel diisolasi lalu dikalikan 255, sehingga tampil sebagai pola "
         "hitam-putih. Bandingkan pola cover dan stego untuk melihat area yang berubah.",
     )
+    info("Cara membaca steganalisis visual",
+         "<p>Steganalisis adalah upaya mendeteksi keberadaan pesan tersembunyi. Di sini bit LSB tiap piksel (0 atau 1) dikalikan 255, sehingga menjadi hitam (0) atau putih (255).</p>",
+         ul("<b>Gambar asli:</b> bidang LSB tampak seperti noise, kadang masih menyisakan pola dari gambar.",
+            "<b>Penyisipan berurutan:</b> area yang terisi pesan tampak jauh lebih acak dibanding area lain, sehingga mudah dikenali.",
+            "<b>StegoShield:</b> posisi piksel diacak, jadi bit pesan tersebar merata dan perubahan sulit dibedakan dengan mata. Itulah gunanya PRNG."))
     v1, v2 = st.columns(2, gap="large")
     with v1:
         up_vis_cover = st.file_uploader("Citra cover", type=["png", "bmp", "jpg"], key="vis_cover")
@@ -657,6 +740,10 @@ elif page == VIS:
 # --------------------------------------------------------------------------
 elif page == HIST:
     section("Histogram RGB: cover vs stego", "Histogram yang hampir sama berarti sebaran warna tidak banyak berubah.")
+    info("Cara membaca histogram",
+         "<p>Histogram menghitung berapa banyak piksel untuk tiap nilai warna 0 sampai 255, terpisah untuk kanal R, G, dan B.</p>",
+         "<p>Mengubah LSB hanya menggeser nilai sebesar 1, jadi bentuk histogram cover dan stego nyaris sama. Itu tandanya sebaran warna terjaga dan perubahan tidak mencolok.</p>",
+         "<p>Perbedaan kecil tetap ada: nilai genap dan ganjil yang bersebelahan (misalnya 150 dan 151) cenderung makin seimbang jumlahnya bila makin banyak bit disisipkan. Pola inilah yang dimanfaatkan uji statistik seperti chi-square untuk mendeteksi steganografi.</p>")
     h1, h2 = st.columns(2, gap="large")
     with h1:
         up_h_cover = st.file_uploader("Cover", type=["png", "jpg"], key="h_cover")
@@ -680,6 +767,11 @@ elif page == HIST:
 elif page == FRAG:
     section("Uji kerapuhan terhadap kompresi JPEG",
             "Stego dikompres JPEG pada beberapa kualitas, lalu pesan dicoba diekstrak kembali.")
+    info("Kenapa LSB rapuh terhadap JPEG?",
+         "<p>JPEG adalah kompresi <b>lossy</b>: gambar dibagi blok 8×8, diubah ke domain frekuensi (DCT), lalu detail halus dibuang lewat kuantisasi. Akibatnya nilai piksel berubah, termasuk bit LSB tempat pesan disimpan.</p>",
+         ul("Kualitas JPEG lebih rendah berarti perubahan lebih besar, tetapi kualitas tinggi pun biasanya sudah cukup untuk merusak pesan.",
+            "Status <b>utuh</b> berarti pesan hasil ekstraksi sama persis dengan pesan asli."),
+         "<p><b>Kesimpulan:</b> LSB bersifat rapuh (fragile). Pesan hanya aman selama stego tetap berupa PNG. Kirim lewat aplikasi atau media sosial yang mengompres ulang gambar dapat menghapus pesan. Inilah trade-off LSB: kapasitas besar dan tak terlihat, tetapi tidak tahan modifikasi.</p>")
     f1, f2 = st.columns(2, gap="large")
     with f1:
         up_f_stego = st.file_uploader("Citra stego", type=["png"], key="f_stego")
@@ -705,6 +797,11 @@ elif page == FRAG:
 elif page == BATCH:
     section("Pengujian otomatis 5 citra × 3 ukuran pesan",
             "Citra uji dibuat acak (256×256 px), lalu tiap pesan disisipkan dan dinilai dengan PSNR/MSE.")
+    info("Apa yang diuji di sini?",
+         "<p>Lima citra diuji dengan tiga ukuran pesan (100 B, 1 KB, 5 KB) untuk melihat pengaruh ukuran pesan terhadap kualitas.</p>",
+         ul("Makin besar pesan, makin banyak piksel yang diubah, sehingga MSE naik dan PSNR turun perlahan, tetapi tetap jauh di atas 30 dB.",
+            "Status <b>PASS</b> berarti PSNR ≥ 30 dB.",
+            "Citra uji berupa noise acak 256×256 px, yaitu citra kecil yang penuh tekstur, sebagai kondisi yang cukup ketat."))
 
     if st.button("Jalankan batch test", type="primary"):
         with st.spinner("Memproses batch test..."):

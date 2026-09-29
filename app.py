@@ -387,7 +387,7 @@ details.info summary{cursor:pointer; list-style:none; padding:.85rem 1.1rem; fon
 details.info summary::-webkit-details-marker{display:none;}
 details.info summary::after{content:"+"; margin-left:auto; font-size:1.2rem; color:var(--soft);}
 details.info[open] summary{border-bottom:1px solid var(--line);}
-details.info[open] summary::after{content:"\2212";}
+details.info[open] summary::after{content:"−";}
 .info-body{padding:1rem 1.2rem .6rem; font-size:.94rem; line-height:1.7;}
 .info-body p, .info-body li{color:var(--ink) !important; margin:0 0 .7rem;}
 .info-body ol, .info-body ul{margin:.1rem 0 .8rem 1.2rem; padding:0;}
@@ -405,6 +405,26 @@ details.info[open] summary::after{content:"\2212";}
 .fnode.g{background:var(--mint-t); border-color:var(--mb); color:var(--mint-x) !important;}
 .farrow{color:var(--soft) !important; font-weight:700;}
 @media (max-width:768px){ .learn{grid-template-columns:1fr;} }
+.lanes{display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:.8rem;}
+.lane{background:var(--field); border:1px solid var(--line); border-radius:18px; padding:1.2rem 1.3rem .5rem;}
+.lane-h{display:flex; align-items:center; gap:.75rem; margin-bottom:1.1rem;}
+.lane-ic{width:2.6rem; height:2.6rem; border-radius:13px; background:var(--v); display:flex; align-items:center; justify-content:center; font-size:1.3rem;}
+.lane-t{font-family:'Bricolage Grotesque',sans-serif; font-weight:700; font-size:1.15rem; color:var(--ink) !important;}
+.lane-s{font-size:.82rem; color:var(--soft) !important;}
+.tl{list-style:none !important; margin:0 !important; padding:0 !important;}
+.tl li{position:relative; display:flex; gap:.85rem; margin:0 !important; padding-bottom:1.05rem; opacity:0; animation:slideIn .5s ease forwards;}
+.tl li:nth-child(2){animation-delay:.08s;} .tl li:nth-child(3){animation-delay:.16s;} .tl li:nth-child(4){animation-delay:.24s;}
+.tl li:nth-child(5){animation-delay:.32s;} .tl li:nth-child(6){animation-delay:.4s;}
+.tl li:not(:last-child)::before{content:""; position:absolute; left:1.05rem; top:2.3rem; bottom:.15rem; width:2px; background:var(--vb);}
+.dot{width:2.1rem; height:2.1rem; flex-shrink:0; border-radius:50%; background:var(--vt); border:1px solid var(--vb); display:flex; align-items:center; justify-content:center; font-size:1rem; z-index:1; transition:transform .2s;}
+.dot.end{background:var(--mint-t); border-color:var(--mb);}
+.tl li:hover .dot{transform:scale(1.14);}
+.tt{font-weight:700; font-size:.95rem; color:var(--ink) !important;}
+.td{font-size:.86rem; line-height:1.5; color:var(--soft) !important;}
+.keybar{display:flex; align-items:center; gap:.7rem; background:var(--vt); border:1px solid var(--vb); border-radius:14px; padding:.85rem 1.1rem; font-size:.92rem; line-height:1.5;}
+.keybar span{color:var(--ink) !important;} .keybar b{color:var(--ink) !important;}
+@keyframes slideIn{from{opacity:0; transform:translateX(-10px);} to{opacity:1; transform:none;}}
+@media (max-width:768px){ .lanes{grid-template-columns:1fr;} }
 """
 st.markdown(f"<style>{CSS}</style>", unsafe_allow_html=True)
 
@@ -432,9 +452,15 @@ def ul(*items: str) -> str:
     return "<ul>" + "".join(f"<li>{i}</li>" for i in items) + "</ul>"
 
 
-def flow(label: str, nodes: list[str]) -> str:
-    parts = [f'<span class="fnode{" g" if i in (0, len(nodes) - 1) else ""}">{n}</span>' for i, n in enumerate(nodes)]
-    return f'<div class="flowlabel">{label}</div><div class="flowrow">' + '<span class="farrow">→</span>'.join(parts) + "</div>"
+def lane(icon: str, title: str, sub: str, steps: list[tuple[str, str, str]]) -> str:
+    """Satu jalur proses berbentuk timeline vertikal."""
+    items = "".join(
+        f'<li><span class="dot{" end" if i == len(steps) - 1 else ""}">{e}</span>'
+        f'<div><div class="tt">{t}</div><div class="td">{d}</div></div></li>'
+        for i, (e, t, d) in enumerate(steps))
+    return (f'<div class="lane"><div class="lane-h"><span class="lane-ic">{icon}</span>'
+            f'<div><div class="lane-t">{title}</div><div class="lane-s">{sub}</div></div></div>'
+            f'<ul class="tl">{items}</ul></div>')
 
 
 def section(title: str, desc: str = "") -> None:
@@ -549,10 +575,27 @@ if page == HOME:
       'Satu bit pesan dititipkan di satu LSB.</div>'
       '<div class="bits"><span>150 =</span><span>1001011<b class="hl">0</b></span><span>→</span>'
       '<span>1001011<b class="hl">1</b></span><span>= 151</span></div></div></div>')
-    H(flow("Alur penyisipan", ["Pesan teks", "Enkripsi AES-256-CBC", "Tambah header panjang",
-                                "Acak posisi piksel (seed dari stego-key)", "Tulis bit ke LSB", "Citra stego PNG"])
-      + flow("Alur ekstraksi", ["Citra stego PNG", "Urutan piksel yang sama (stego-key sama)", "Baca bit LSB",
-                                 "Baca header, ambil payload", "Dekripsi AES-256", "Pesan teks"]))
+    section("Alur kerja", "Dua sisi proses yang saling mengunci lewat stego-key yang sama.")
+    H('<div class="lanes">'
+      + lane("📥", "Penyisipan", "Sisi pengirim", [
+          ("📝", "Tulis pesan", "Pesan teks dan stego-key menjadi masukan."),
+          ("🔐", "Enkripsi AES-256", "Kunci diturunkan dari stego-key (SHA-256), IV acak ditaruh di depan hasil."),
+          ("🏷️", "Tambah header", "32 bit di awal menyimpan panjang payload."),
+          ("🎲", "Acak urutan piksel", "PRNG LCG 64-bit dan Fisher-Yates, seed dari stego-key."),
+          ("✍️", "Tulis ke LSB", "Tiap bit menggantikan LSB satu kanal R, G, atau B."),
+          ("💾", "Simpan PNG", "Format lossless menjaga bit tetap utuh. Jadilah citra stego."),
+      ])
+      + lane("📤", "Ekstraksi", "Sisi penerima", [
+          ("🖼️", "Buka citra stego", "Gambar PNG hasil penyisipan, tanpa diedit."),
+          ("🎲", "Bentuk ulang urutan", "Stego-key yang sama menghasilkan urutan piksel yang sama."),
+          ("🏷️", "Baca header", "32 bit pertama memberi tahu panjang payload."),
+          ("🔎", "Baca bit LSB", "Ambil bit sebanyak panjang payload dari posisi yang sudah diacak."),
+          ("🔓", "Dekripsi AES-256", "Pisahkan IV, dekripsi, lalu buang padding."),
+          ("✅", "Pesan kembali", "Bila key salah, header atau dekripsi gagal dan pesan tidak muncul."),
+      ])
+      + '</div>'
+      '<div class="keybar"><span>🔑</span><span><b>Stego-key adalah penghubungnya.</b> '
+      'Key yang sama membentuk urutan piksel dan kunci AES yang sama di kedua sisi.</span></div>')
     st.markdown("---")
     b1, b2 = st.columns(2, gap="medium")
     b1.button("Mulai sisipkan pesan", on_click=go, args=(EMBED,), use_container_width=True)

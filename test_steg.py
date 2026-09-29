@@ -126,6 +126,32 @@ class TestStegEngine(unittest.TestCase):
         with self.assertRaises(se.CapacityError):
             se.embed_message(tiny_path, pesan_panjang, "pass", output_path)
 
+    def test_steganalisis_chi_square(self):
+        """Uji deteksi steganography berbasis Uji Chi-Square."""
+        import steg_testing as stesting
+
+        # Buat citra alami sederhana
+        natural_path = os.path.join(self.temp_dir, "natural_cover.png")
+        import numpy as np
+        rng = np.random.default_rng(42)
+        # Distribusi non-uniform (Poisson / Normal) yang alami
+        data = np.clip(rng.normal(128, 30, (80, 80, 3)), 0, 255).astype(np.uint8)
+        Image.fromarray(data).save(natural_path)
+
+        pesan_panjang = "Pesan rahasia uji Chi-Square steganography." * 20
+        kunci = "stego-chi-key"
+        stego_path = os.path.join(self.temp_dir, "stego_chisq.png")
+
+        se.embed_message(natural_path, pesan_panjang, kunci, stego_path)
+
+        p_cover, p_stego = stesting.plot_chi_square_progression(
+            natural_path,
+            stego_path,
+            os.path.join(self.temp_dir, "chi_sq_plot.png"),
+        )
+        self.assertGreater(p_stego, p_cover)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+

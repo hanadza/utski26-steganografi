@@ -1,0 +1,6 @@
+pycryptodome
+pillow
+numpy
+matplotlib
+streamlit
+pandas

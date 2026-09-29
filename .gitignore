@@ -9,6 +9,7 @@ hasil_pengujian/
 *.png
 *.jpg
 *.jpeg
+*.csv
 !assets/*.png
 
 # Virtual Environment
@@ -17,8 +18,9 @@ env/
 ENV/
 .venv/
 
-# Environment variables
+# Environment variables & Streamlit cache
 .env
+.streamlit/
 
 # IDE / Editor configuration
 .vscode/
@@ -29,3 +31,4 @@ ENV/
 # OS generated files
 .DS_Store
 Thumbs.db
+

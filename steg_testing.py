@@ -103,6 +103,119 @@ def save_enhanced_lsb_visualization(cover_path: str, stego_path: str, output_pat
     return enh_cover_path, enh_stego_path
 
 
+# --- Statistical Steganalysis (Chi-Square Test) ---
+
+def _gamma_inc_lower(a: float, x: float) -> float:
+    """Aproksimasi fungsi Gamma tak lengkap (Incomplete Gamma Function) untuk kalkulasi p-value Chi-Square."""
+    if x <= 0:
+        return 0.0
+    sum_val = 1.0 / a
+    term = 1.0 / a
+    for n in range(1, 100):
+        term *= x / (a + n)
+        sum_val += term
+        if term < 1e-12 * sum_val:
+            break
+    return (x ** a) * math.exp(-x) * sum_val
+
+
+def _chi_square_p_value(chi_sq: float, df: int) -> float:
+    """Menghitung p-value probabilitas Chi-Square (1 - P(df/2, chi_sq/2))."""
+    if df <= 0 or chi_sq <= 0:
+        return 0.0
+    a = df / 2.0
+    x = chi_sq / 2.0
+    try:
+        prob = _gamma_inc_lower(a, x) / math.gamma(a)
+        p_val = 1.0 - prob
+        return max(0.0, min(1.0, float(p_val)))
+    except Exception:
+        z = ((chi_sq / df) ** (1 / 3) - (1 - 2 / (9 * df))) / math.sqrt(2 / (9 * df))
+        p_val = 0.5 * math.erfc(z / math.sqrt(2))
+        return max(0.0, min(1.0, float(p_val)))
+
+
+def calculate_chi_square_prob(pixels: np.ndarray) -> float:
+    """
+    Menghitung probabilitas keberadaan pesan steganografi LSB menggunakan Uji Chi-Square
+    berdasarkan sebaran PoV (Pairs of Values) (2k, 2k+1).
+    """
+    flat = pixels.flatten().astype(np.int32)
+    counts = np.bincount(flat, minlength=256)
+
+    chi_sq = 0.0
+    df = 0
+
+    for k in range(128):
+        n1 = counts[2 * k]
+        n2 = counts[2 * k + 1]
+        e = (n1 + n2) / 2.0
+
+        if e > 0:
+            chi_sq += ((n1 - e) ** 2) / e
+            df += 1
+
+    if df == 0:
+        return 0.0
+
+    return _chi_square_p_value(chi_sq, df)
+
+
+def analyze_chi_square_progression(image_path: str, num_blocks: int = 20) -> Tuple[List[float], List[float], float]:
+    """
+    Melakukan analisis Uji Chi-Square bertahap (progression attack) dari 5% hingga 100% piksel citra.
+    Mengembalikan (persentase_sampel, probabilitas_pvalue, overall_p_value).
+    """
+    img = Image.open(image_path).convert("RGB")
+    arr = np.array(img, dtype=np.uint8)
+
+    flat_pixels = arr.flatten()
+    total_len = len(flat_pixels)
+
+    sample_percentages = []
+    p_values = []
+
+    step = total_len // num_blocks
+    for i in range(1, num_blocks + 1):
+        sub_sample = flat_pixels[: i * step]
+        pct = (i / num_blocks) * 100.0
+        p_val = calculate_chi_square_prob(sub_sample)
+        sample_percentages.append(pct)
+        p_values.append(p_val)
+
+    overall_p_val = p_values[-1]
+    return sample_percentages, p_values, overall_p_val
+
+
+def plot_chi_square_progression(
+    cover_path: str,
+    stego_path: str,
+    output_path: str,
+) -> Tuple[float, float]:
+    """Menghasilkan grafik perbandingan kurva probabilitas Chi-Square untuk Cover vs Stego."""
+    pct_cover, p_cover, p_overall_cover = analyze_chi_square_progression(cover_path)
+    pct_stego, p_stego, p_overall_stego = analyze_chi_square_progression(stego_path)
+
+    fig, ax = plt.subplots(figsize=(8, 4.5))
+    ax.plot(pct_cover, [p * 100 for p in p_cover], "b-o", label=f"Cover Image (Prob Final: {p_overall_cover*100:.1f}%)", linewidth=2)
+    ax.plot(pct_stego, [p * 100 for p in p_stego], "r-s", label=f"Stego Image (Prob Final: {p_overall_stego*100:.1f}%)", linewidth=2)
+
+    ax.set_title("Steganalisis Statistik: Kurva Uji Chi-Square (Westfeld & Pfitzmann Attack)")
+    ax.set_xlabel("Persentase Sampel Piksel Diperiksa (%)")
+    ax.set_ylabel("Probabilitas Mengandung Pesan LSB (%)")
+    ax.set_ylim(-5, 105)
+    ax.axhline(50, color="gray", linestyle="--", alpha=0.6, label="Threshold Deteksi (50%)")
+    ax.grid(True, linestyle=":", alpha=0.6)
+    ax.legend(loc="best")
+
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+
+    return p_overall_cover, p_overall_stego
+
+
+
 # --- Color Histogram ---
 
 def plot_histogram_comparison(cover_path: str, stego_path: str, output_path: str) -> None:

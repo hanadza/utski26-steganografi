@@ -22,6 +22,7 @@ Proyek ini disusun untuk memenuhi **Tugas Proyek Keamanan Informasi (Topik B - S
 - **Header Bit Metadata:** Header 32-bit big-endian menyimpan ukuran payload terenkripsi secara presisi.
 - **Validasi Kapasitas:** Otomatis menghitung kapasitas maksimal citra dan menolak penyisipan bila payload melebihi kapasitas.
 - **Visual Steganalisis (Enhanced LSB):** Memvisualisasikan bidang bit LSB dalam kontras hitam-putih.
+- **Steganalisis Statistik (Uji Chi-Square $\chi^2$):** Mendeteksi keberadaan pesan tersembunyi LSB berbasis kesetaraan distribusi *Pairs of Values* (PoV) (Serangan Westfeld & Pfitzmann).
 - **Evaluasi Kuantitatif Citra (MSE & PSNR):** Menghitung nilai distorsi citra dengan ambang kelulusan standar perkuliahan (PSNR $\ge$ 30 dB).
 - **Uji Kerapuhan JPEG (Fragility Test):** Membuktikan sifat *fragile* LSB terhadap kompresi *lossy* JPEG.
 - **Aplikasi Web Interaktif (Streamlit):** GUI berbasis web yang responsif dengan fitur perbandingan berdampingan.
@@ -73,7 +74,7 @@ python steg_testing.py
 python steg_testing.py --batch
 ```
 
-### 4. Menjalankan Unit Test Suite (6 Pengujian Wajib)
+### 4. Menjalankan Unit Test Suite (7 Pengujian Lengkap)
 ```bash
 python -m unittest test_steg.py -v
 ```

@@ -694,8 +694,11 @@ elif page == EMBED:
                 stats([("MSE", f"{emb['mse']:.6f}"), ("PSNR", psnr_txt), ("Status", badge)])
                 callout("success" if emb["passed"] else "error", f"Klasifikasi: {html.escape(str(emb['label']))}")
 
+                base_name = os.path.splitext(uploaded_cover.name)[0]
+                download_filename = f"{base_name}_stego.png"
+
                 st.download_button(
-                    "Download citra stego (PNG)", data=emb["png"], file_name="stego_result.png",
+                    f"Download citra stego ({download_filename})", data=emb["png"], file_name=download_filename,
                     mime="image/png", type="primary", use_container_width=True,
                 )
     step_slot.markdown(stepper(done_steps), unsafe_allow_html=True)

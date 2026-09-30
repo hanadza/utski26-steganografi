@@ -917,7 +917,7 @@ elif page == FRAG:
     with f1:
         up_f_stego = st.file_uploader("Citra stego (PNG)", type=["png"], key="f_stego")
     with f2:
-        f_msg = st.text_input("Pesan asli", value="Test message for LSB.")
+        f_msg = st.text_area("Pesan asli", value="Test message for LSB.", height=140)
         f_key = st.text_input("Stego-key", value="secret-passphrase-002", type="password")
 
     if up_f_stego is None:

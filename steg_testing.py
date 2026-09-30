@@ -8,6 +8,7 @@ uji kerapuhan JPEG, dan automasi batch test (5 citra x 3 ukuran pesan) pada steg
 from __future__ import annotations
 
 import argparse
+import io
 import math
 import os
 from typing import Dict, List, Tuple

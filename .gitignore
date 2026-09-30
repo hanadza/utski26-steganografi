@@ -11,6 +11,7 @@ hasil_pengujian/
 *.jpeg
 *.csv
 !assets/*.png
+!BerkasUji_StegoShield/**
 
 # Virtual Environment
 venv/

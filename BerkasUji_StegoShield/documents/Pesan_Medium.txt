@@ -1,5 +1,0 @@
-MEMO INTERNAL - RAHASIA
-Kepada: Tim Pengembang StegoShield
-Perihal: Jadwal rilis purwarupa v1.0
-
-Pengujian akhir modul AES-256-CBC dan PRNG-LCG telah selesai pada tanggal yang direncanakan. Seluruh kasus uji embed-extract menunjukkan hasil konsisten pada citra cover dengan tingkat kompleksitas rendah hingga tinggi. Mohon tim QA menyiapkan skenario pengujian tambahan untuk kompresi JPEG kualitas 90, 70, dan 50 sebelum demo di hadapan dosen pengampu pada minggu depan. Kunci stego untuk lingkungan staging akan dibagikan melalui kanal terpisah. Mohon dokumen ini tidak diteruskan ke pihak di luar tim.

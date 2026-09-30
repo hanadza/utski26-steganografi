@@ -902,33 +902,77 @@ elif page == HIST:
 
 
 # --------------------------------------------------------------------------
-# Uji kerapuhan JPEG
+# Uji kerapuhan terhadap Kompresi & Serangan Manipulasi Citra
 # --------------------------------------------------------------------------
 elif page == FRAG:
-    section("Uji kerapuhan terhadap kompresi JPEG",
-            "Stego dikompres JPEG pada beberapa kualitas, lalu pesan dicoba diekstrak kembali.")
-    info("Kenapa LSB rapuh terhadap JPEG?",
-         "<p>JPEG adalah kompresi <b>lossy</b>: gambar dibagi blok 8×8, diubah ke domain frekuensi (DCT), lalu detail halus dibuang lewat kuantisasi. Akibatnya nilai piksel berubah, termasuk bit LSB tempat pesan disimpan.</p>",
-         ul("Kualitas JPEG lebih rendah berarti perubahan lebih besar, tetapi kualitas tinggi pun biasanya sudah cukup untuk merusak pesan.",
-            "Status <b>utuh</b> berarti pesan hasil ekstraksi sama persis dengan pesan asli."),
-         "<p><b>Kesimpulan:</b> LSB bersifat rapuh (fragile). Pesan hanya aman selama stego tetap berupa PNG. Kirim lewat aplikasi atau media sosial yang mengompres ulang gambar dapat menghapus pesan. Inilah trade-off LSB: kapasitas besar dan tak terlihat, tetapi tidak tahan modifikasi.</p>")
+    section("Uji Kerapuhan terhadap Kompresi & Manipulasi Citra",
+            "Stego diuji dengan 5 jenis serangan manipulasi (JPEG Q90, Q70, Q50, Resize, dan Crop) untuk melihat ketahanan pesan.")
+    info("Kenapa LSB rapuh terhadap manipulasi citra?",
+         "<p>Metode LSB menyisipkan bit pesan langsung pada bit terendah nilai piksel spasial. Manipulasi seperti kompresi berbayang (JPEG), perubahan skala (Resize), maupun pemotongan (Crop) akan merusak susunan bit LSB.</p>",
+         ul("<b>Kompresi JPEG (Quality 90, 70, 50):</b> Pembulatan kuantisasi DCT mengubah nilai piksel spasial.",
+            "<b>Resize (Rescaling):</b> Interpolasi piksel merusak bit LSB di seluruh area citra.",
+            "<b>Crop (Pemotongan):</b> Menghilangkan sebagian piksel sehingga indeks permutasi PRNG terputus."),
+         "<p><b>Kesimpulan:</b> LSB bersifat rapuh (fragile). Anda dapat mengunduh berkas hasil serangan di bawah untuk melihat perbedaan visualnya.</p>")
     f1, f2 = st.columns(2, gap="large")
     with f1:
-        up_f_stego = st.file_uploader("Citra stego", type=["png"], key="f_stego")
+        up_f_stego = st.file_uploader("Citra stego (PNG)", type=["png"], key="f_stego")
     with f2:
         f_msg = st.text_input("Pesan asli", value="Test message for LSB.")
         f_key = st.text_input("Stego-key", value="secret-passphrase-002", type="password")
 
     if up_f_stego is None:
         callout("info", "Upload citra stego untuk menjalankan uji kerapuhan.")
-    elif st.button("Jalankan uji kerapuhan", type="primary"):
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            tf = os.path.join(tmp_dir, "stego.png")
-            Image.open(up_f_stego).convert("RGB").save(tf)
-            res = stesting.fragility_test_jpeg(tf, f_key, f_msg, tmp_dir)
-            df = pd.DataFrame(res)[["quality", "status", "berhasil_utuh"]]
-            df.columns = ["Kualitas JPEG", "Status", "Pesan utuh"]
-            table(df)
+    else:
+        if "fragility_results" not in st.session_state:
+            st.session_state["fragility_results"] = None
+
+        if st.button("Jalankan Uji Kerapuhan (5 Serangan)", type="primary", use_container_width=True):
+            with st.spinner("Menjalankan 5 eksperimen serangan manipulasi..."):
+                with tempfile.TemporaryDirectory() as tmp_dir:
+                    tf = os.path.join(tmp_dir, "stego.png")
+                    Image.open(up_f_stego).convert("RGB").save(tf)
+                    res = stesting.fragility_test_jpeg(tf, f_key, f_msg, tmp_dir)
+                    st.session_state["fragility_results"] = res
+                    st.session_state["fragility_stego_bytes"] = up_f_stego.getvalue()
+                    st.session_state["fragility_stego_name"] = up_f_stego.name
+
+        if st.session_state.get("fragility_results") is not None:
+            res = st.session_state["fragility_results"]
+            st.markdown("---")
+            callout("success", "Pengujian 5 jenis serangan manipulasi selesai.")
+
+            # Tampilkan Tabel Hasil Pengujian
+            df_display = []
+            for r in res:
+                df_display.append({
+                    "Jenis Serangan": r["nama_serangan"],
+                    "Deskripsi": r["deskripsi"],
+                    "Format File": r["format"],
+                    "Status Ekstraksi": r["status"],
+                    "Pesan Utuh": "Ya" if r["berhasil_utuh"] else "Tidak",
+                })
+            table(pd.DataFrame(df_display))
+
+            # Galeri Visual Citra Hasil Serangan & Unduh Berkas
+            section("Galeri & Unduh Citra Hasil Manipulasi Serangan", "Lihat dan unduh berkas citra hasil serangan untuk membandingkan perubahan visualnya.")
+            sel_atk = st.selectbox("Pilih Jenis Hasil Serangan untuk Diinspeksi / Diunduh:", [r["nama_serangan"] for r in res])
+            selected_atk = next(r for r in res if r["nama_serangan"] == sel_atk)
+
+            col_a, col_b = st.columns(2, gap="large")
+            with col_a:
+                img_label("Citra Stego Asli")
+                st.image(st.session_state["fragility_stego_bytes"], use_container_width=True)
+            with col_b:
+                img_label(f"Hasil Serangan: {selected_atk['nama_serangan']} ({selected_atk['format']})")
+                st.image(selected_atk["img_bytes"], use_container_width=True)
+                mime_type = "image/jpeg" if selected_atk["format"] == "JPG" else "image/png"
+                st.download_button(
+                    label=f"📥 Download Hasil Serangan ({selected_atk['filename']})",
+                    data=selected_atk["img_bytes"],
+                    file_name=selected_atk["filename"],
+                    mime=mime_type,
+                    use_container_width=True,
+                )
 
 
 # --------------------------------------------------------------------------

@@ -249,17 +249,54 @@ def fragility_test_jpeg(
     output_dir: str,
     qualities: Tuple[int, ...] = JPEG_QUALITIES,
 ) -> List[Dict]:
-    """Uji kerapuhan LSB terhadap rekompresi JPEG pada berbagai level kualitas."""
+    """Uji kerapuhan LSB terhadap 5 jenis serangan manipulasi (JPEG Q90, Q70, Q50, Resize, Crop)."""
     results: List[Dict] = []
     stego_image = Image.open(stego_path).convert("RGB")
+    width, height = stego_image.size
 
-    for quality in qualities:
-        jpeg_path = os.path.join(output_dir, f"stego_q{quality}.jpg")
-        stego_image.save(jpeg_path, format="JPEG", quality=quality)
+    attacks = [
+        {"name": "JPEG Q=90", "type": "jpeg", "quality": 90, "ext": "jpg", "desc": "Kompresi JPEG Quality 90"},
+        {"name": "JPEG Q=70", "type": "jpeg", "quality": 70, "ext": "jpg", "desc": "Kompresi JPEG Quality 70"},
+        {"name": "JPEG Q=50", "type": "jpeg", "quality": 50, "ext": "jpg", "desc": "Kompresi JPEG Quality 50"},
+        {"name": "Resize 50%", "type": "resize", "ext": "png", "desc": "Rescaling (Resize 50% -> 100%)"},
+        {"name": "Crop 10%", "type": "crop", "ext": "png", "desc": "Crop 10% pada setiap sisi"},
+    ]
 
-        entry: Dict = {"quality": quality, "path": jpeg_path}
+    for atk in attacks:
+        atk_filename = f"attack_{atk['name'].lower().replace(' ', '_').replace('=', '')}.{atk['ext']}"
+        atk_path = os.path.join(output_dir, atk_filename)
+
+        if atk["type"] == "jpeg":
+            stego_image.save(atk_path, format="JPEG", quality=atk["quality"])
+            mod_img = Image.open(atk_path)
+        elif atk["type"] == "resize":
+            resized_down = stego_image.resize((max(1, width // 2), max(1, height // 2)), Image.Resampling.BILINEAR)
+            mod_img = resized_down.resize((width, height), Image.Resampling.BILINEAR)
+            mod_img.save(atk_path, format="PNG")
+        elif atk["type"] == "crop":
+            crop_x = int(width * 0.1)
+            crop_y = int(height * 0.1)
+            cropped = stego_image.crop((crop_x, crop_y, width - crop_x, height - crop_y))
+            mod_img = cropped.resize((width, height), Image.Resampling.BILINEAR)
+            mod_img.save(atk_path, format="PNG")
+
+        # Simpan bytes citra hasil serangan untuk UI Streamlit
+        img_buf = io.BytesIO()
+        fmt = "JPEG" if atk["ext"] == "jpg" else "PNG"
+        mod_img.save(img_buf, format=fmt)
+        img_bytes = img_buf.getvalue()
+
+        entry: Dict = {
+            "nama_serangan": atk["name"],
+            "deskripsi": atk["desc"],
+            "format": atk["ext"].upper(),
+            "path": atk_path,
+            "filename": atk_filename,
+            "img_bytes": img_bytes,
+        }
+
         try:
-            extracted = se.extract_message(jpeg_path, stego_key)
+            extracted = se.extract_message(atk_path, stego_key)
             if extracted == original_message:
                 entry["status"] = "Pesan utuh"
                 entry["berhasil_utuh"] = True
@@ -275,6 +312,7 @@ def fragility_test_jpeg(
         results.append(entry)
 
     return results
+
 
 
 # --- Helper Utilities & Batch Test ---

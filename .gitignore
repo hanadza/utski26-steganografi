@@ -9,9 +9,7 @@ hasil_pengujian/
 *.png
 *.jpg
 *.jpeg
-*.csv
 !assets/*.png
-!BerkasUji_StegoShield/**
 
 # Virtual Environment
 venv/
@@ -19,9 +17,8 @@ env/
 ENV/
 .venv/
 
-# Environment variables & Streamlit cache
+# Environment variables
 .env
-.streamlit/
 
 # IDE / Editor configuration
 .vscode/
@@ -32,4 +29,3 @@ ENV/
 # OS generated files
 .DS_Store
 Thumbs.db
-

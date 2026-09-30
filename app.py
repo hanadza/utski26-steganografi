@@ -805,9 +805,9 @@ elif page == CHISQ:
         "Bagaimana Uji Chi-Square Bekerja?",
         "<p>Uji Chi-Square (<b>χ² Attack</b>) menganalisis kesetaraan frekuensi piksel berpasangan 2k dan 2k+1 (misal 4 & 5, 10 & 11).</p>",
         ul(
-            "<b>Gambar Alami (Cover):</b> Frekuensi piksel 2k dan 2k+1 biasanya tidak seimbang.",
-            "<b>Penyisipan LSB (Stego):</b> Bit rahasia yang terenkripsi acak menyamakan frekuensi 2k dan 2k+1.",
-            "<b>Interpretasi Probabilitas:</b> Jika p-value mendekati <b>100%</b>, gambar hampir pasti mengandung data tersembunyi LSB. Jika mendekati <b>0%</b>, gambar dinilai alami/bersih.",
+            "<b>Gambar Alami (Cover PNG/BMP):</b> Frekuensi piksel 2k dan 2k+1 biasanya tidak seimbang (p-value mendekati 0%).",
+            "<b>Penyisipan LSB (Stego):</b> Bit rahasia yang terenkripsi acak menyamakan frekuensi 2k dan 2k+1 (p-value mendekati 100%).",
+            "<b>Catatan Foto JPEG / WhatsApp:</b> Kompresi berbayang (lossy) JPEG juga dapat meratakan frekuensi piksel bersebelahan, sehingga foto JPEG alami sering diidentifikasi memiliki p-value tinggi oleh uji Chi-Square spasial murni. Untuk hasil uji Chi-Square yang presisi, gunakan berkas asli berformat PNG atau BMP.",
         ),
     )
 

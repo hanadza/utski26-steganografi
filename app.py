@@ -695,10 +695,21 @@ elif page == EMBED:
                 callout("success" if emb["passed"] else "error", f"Klasifikasi: {html.escape(str(emb['label']))}")
 
                 base_name = os.path.splitext(uploaded_cover.name)[0]
-                download_filename = f"{base_name}_stego.png"
+                default_filename = f"{base_name}_stego.png"
+
+                custom_filename = st.text_input(
+                    "Nama file unduhan (custom):",
+                    value=default_filename,
+                    key="custom_download_filename",
+                    help="Anda dapat mengubah nama file unduhan sesuai kebutuhan sebelum menekan tombol download.",
+                ).strip()
+
+                final_download_name = custom_filename if custom_filename else default_filename
+                if not final_download_name.lower().endswith(".png"):
+                    final_download_name += ".png"
 
                 st.download_button(
-                    f"Download citra stego ({download_filename})", data=emb["png"], file_name=download_filename,
+                    f"Download citra stego ({final_download_name})", data=emb["png"], file_name=final_download_name,
                     mime="image/png", type="primary", use_container_width=True,
                 )
     step_slot.markdown(stepper(done_steps), unsafe_allow_html=True)
